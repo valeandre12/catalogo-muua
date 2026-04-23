@@ -8,7 +8,8 @@ st.title("🏛️ Catálogo MUUA - Colección de Antropología")
 
 @st.cache_data
 def load_data(path):
-    df = pd.read_excel(path)
+    # Usamos engine='openpyxl' para asegurar compatibilidad
+    df = pd.read_excel(path, engine='openpyxl')
     df.columns = [c.strip() for c in df.columns]
     return df
 
@@ -23,26 +24,37 @@ try:
     # 1. CARGA DE DATOS
     df = load_data("LIBRODEREGISTRO.xlsx") 
     
+    # Manejo robusto de fechas para evitar el error del log
     if "Fecha de ingreso" in df.columns:
+        # Convertimos a fecha ignorando errores y luego extraemos el año
         df['Año'] = pd.to_datetime(df["Fecha de ingreso"], errors='coerce').dt.year
+        # Si el año es nulo, ponemos un 0 temporal para que no rompa el código
+        df['Año'] = df['Año'].fillna(0).astype(int)
 
-    # 2. BUSCADORES (Exactamente como los tenías al principio)
+    # 2. BUSCADORES
     registro = st.text_input("Buscar por Número de Registro:")
-    lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
+    
+    # Aseguramos que Cultura no tenga valores nulos para el filtro
+    culturas_disponibles = df['Cultura'].dropna().unique().astype(str).tolist()
+    lista_culturas = ["Todas"] + sorted(culturas_disponibles)
     cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
 
     # 3. LÓGICA DE FILTRADO
     df_filtrado = df.copy()
     if registro:
-        df_filtrado = df_filtrado[df_filtrado['Número de Registro'].astype(str) == registro]
+        df_filtrado = df_filtrado[df_filtrado['Número de Registro'].astype(str).str.contains(registro, case=False)]
     if cultura_sel != "Todas":
         df_filtrado = df_filtrado[df_filtrado['Cultura'] == cultura_sel]
 
     # 4. TABLA PRINCIPAL
     st.subheader("Información del Objeto")
     
+    # Mostramos solo las columnas que existen para evitar errores
+    columnas_a_mostrar = ["Número de Registro", "Año", "Denominación del Objeto", "Cultura", "Materiales"]
+    columnas_reales = [c for c in columnas_a_mostrar if c in df_filtrado.columns]
+
     evento_seleccion = st.dataframe(
-        df_filtrado[["Número de Registro", "Año", "Denominación del Objeto", "Cultura", "Materiales"]],
+        df_filtrado[columnas_reales],
         use_container_width=True,
         on_select="rerun", 
         selection_mode="single-row"
@@ -69,13 +81,14 @@ try:
             with st.container(border=True):
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.write(f"**Denominación:** {datos_objeto['Denominación del Objeto']}")
-                    st.write(f"**Cultura:** {datos_objeto['Cultura']}")
-                    st.write(f"**Año de ingreso:** {int(datos_objeto['Año']) if not pd.isna(datos_objeto['Año']) else 'N/A'}")
+                    st.write(f"**Denominación:** {datos_objeto.get('Denominación del Objeto', 'N/A')}")
+                    st.write(f"**Cultura:** {datos_objeto.get('Cultura', 'N/A')}")
+                    año_val = datos_objeto.get('Año', 0)
+                    st.write(f"**Año de ingreso:** {año_val if año_val != 0 else 'N/A'}")
                 with c2:
-                    st.write(f"**Materiales:** {datos_objeto['Materiales']}")
-                    st.write(f"**Zona:** {datos_objeto['Zona Arqueológica']}")
-                    st.write(f"**País:** {datos_objeto['País']}")
+                    st.write(f"**Materiales:** {datos_objeto.get('Materiales', 'N/A')}")
+                    st.write(f"**Zona:** {datos_objeto.get('Zona Arqueológica', 'N/A')}")
+                    st.write(f"**País:** {datos_objeto.get('País', 'N/A')}")
 
 except Exception as e:
-    st.error(f"Error: {e}")
+    st.error(f"Hubo un problema al cargar los datos: {e}")
