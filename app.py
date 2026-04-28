@@ -29,17 +29,12 @@ def get_image(denominacion):
 
 try:
     # 1. CARGA DE DATOS
-    import glob
+    df = load_data("LIBRODEREGISTRO.xlsx") 
     
-    # Buscar el archivo Excel en la carpeta actual o subcarpetas
-    excel_files = glob.glob("**/*.xlsx", recursive=True)
-    if not excel_files:
-        st.error("⚠️ No se encontró archivo Excel. Por favor, carga LIBRODEREGISTRO.xlsx en el repositorio")
-        st.stop()
-    
-    df = load_data(excel_files[0])
+    if "Fecha de ingreso" in df.columns:
+        df['Año'] = pd.to_datetime(df["Fecha de ingreso"], errors='coerce').dt.year
 
-    # 2. BUSCADORES
+    # 2. BUSCADORES (Exactamente como los tenías al principio)
     registro = st.text_input("Buscar por Número de Registro:")
     lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
     cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
@@ -89,6 +84,8 @@ try:
                     st.write(f"**Materiales:** {datos_objeto['Materiales']}")
                     st.write(f"**Zona:** {datos_objeto['Zona Arqueológica']}")
                     st.write(f"**País:** {datos_objeto['País']}")
+    else:
+        st.warning("No hay objetos que coincidan con los filtros seleccionados")
 
 except Exception as e:
     st.error(f"Error: {e}")
