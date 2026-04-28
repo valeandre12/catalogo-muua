@@ -20,16 +20,25 @@ def get_image(denominacion):
     return os.path.join(img_folder, "default.jpg")
 
 try:
-    # 1. CARGA DE DATOS
+    st.write("📌 Paso 1: Cargando datos...")
     df = load_data("LIBRODEREGISTRO.xlsx") 
+    st.write(f"✅ Datos cargados: {len(df)} registros")
     
+    st.write("📌 Paso 2: Procesando fechas...")
     if "Fecha de ingreso" in df.columns:
         df['Año'] = pd.to_datetime(df["Fecha de ingreso"], format='%Y-%m-%d', errors='coerce').dt.year
-
-    # 2. BUSCADORES
-    registro = st.text_input("Buscar por Número de Registro:")
+    st.write("✅ Fechas procesadas")
+    
+    st.write("📌 Paso 3: Creando lista de culturas...")
+    st.write(f"Culturas únicas: {df['Cultura'].dropna().unique().tolist()}")
     lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
+    st.write("✅ Lista de culturas creada")
+    
+    # 2. BUSCADORES
+    st.write("📌 Paso 4: Creando buscadores...")
+    registro = st.text_input("Buscar por Número de Registro:")
     cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
+    st.write("✅ Buscadores creados")
 
     # 3. LÓGICA DE FILTRADO
     df_filtrado = df.copy()
@@ -78,4 +87,6 @@ try:
                     st.write(f"**País:** {datos_objeto['País']}")
 
 except Exception as e:
-    st.error(f"Error: {e}")
+    st.error(f"❌ ERROR: {str(e)}")
+    import traceback
+    st.write(traceback.format_exc())
