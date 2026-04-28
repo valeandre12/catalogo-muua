@@ -24,9 +24,9 @@ try:
     df = load_data("LIBRODEREGISTRO.xlsx") 
     
     if "Fecha de ingreso" in df.columns:
-        df['Año'] = pd.to_datetime(df["Fecha de ingreso"], errors='coerce').dt.year
+        df['Año'] = pd.to_datetime(df["Fecha de ingreso"], format='%Y-%m-%d', errors='coerce').dt.year
 
-    # 2. BUSCADORES (Exactamente como los tenías al principio)
+    # 2. BUSCADORES
     registro = st.text_input("Buscar por Número de Registro:")
     lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
     cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
