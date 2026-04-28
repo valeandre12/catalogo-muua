@@ -10,6 +10,14 @@ st.title("🏛️ Catálogo MUUA - Colección de Antropología")
 def load_data(path):
     df = pd.read_excel(path)
     df.columns = [c.strip() for c in df.columns]
+    
+    # Procesar fechas de forma robusta
+    if "Fecha de ingreso" in df.columns:
+        df['Fecha de ingreso'] = pd.to_datetime(df["Fecha de ingreso"], format='%d/%m/%Y', errors='coerce')
+        df['Año'] = df['Fecha de ingreso'].dt.year.astype('Int64')
+    else:
+        df['Año'] = None
+    
     return df
 
 def get_image(denominacion):
@@ -20,30 +28,17 @@ def get_image(denominacion):
     return os.path.join(img_folder, "default.jpg")
 
 try:
-    st.write("📌 Paso 1: Cargando datos...")
-    df = load_data("LIBRODEREGISTRO.xlsx") 
-    st.write(f"✅ Datos cargados: {len(df)} registros")
+    # 1. CARGA DE DATOS
+    import glob
     
-    st.write("📌 Paso 2: Procesando fechas...")
-    if "Fecha de ingreso" in df.columns:
-        df['Año'] = pd.to_datetime(df["Fecha de ingreso"], format='%Y-%m-%d', errors='coerce').dt.year
-    st.write("✅ Fechas procesadas")
+    # Buscar el archivo Excel en la carpeta actual o subcarpetas
+    excel_files = glob.glob("**/*.xlsx", recursive=True)
+    if not excel_files:
+        st.error("⚠️ No se encontró archivo Excel. Por favor, carga LIBRODEREGISTRO.xlsx en el repositorio")
+        st.stop()
     
-    st.write("📌 Paso 3: Creando lista de culturas...")
-    st.write(f"Culturas únicas: {df['Cultura'].dropna().unique().tolist()}")
-    lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
-    st.write("✅ Lista de culturas creada")
-    
-    # 2. BUSCADORES
-    st.write("📌 Paso 4: Creando buscadores...")
-    registro = st.text_input("Buscar por Número de Registro:")
-    cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
-    st.write("✅ Buscadores creados")
+    df = load_data(excel_files[0]) 
 
-    # 3. LÓGICA DE FILTRADO
-    df_filtrado = df.copy()
-    if registro:
-        df_filtrado = df_filtrado[df_filtrado['Número de Registro'].astype(str) == registro]
     if cultura_sel != "Todas":
         df_filtrado = df_filtrado[df_filtrado['Cultura'] == cultura_sel]
 
@@ -87,6 +82,4 @@ try:
                     st.write(f"**País:** {datos_objeto['País']}")
 
 except Exception as e:
-    st.error(f"❌ ERROR: {str(e)}")
-    import traceback
-    st.write(traceback.format_exc())
+    st.error(f"Error: {e}")
