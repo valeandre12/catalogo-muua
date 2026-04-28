@@ -37,8 +37,17 @@ try:
         st.error("⚠️ No se encontró archivo Excel. Por favor, carga LIBRODEREGISTRO.xlsx en el repositorio")
         st.stop()
     
-    df = load_data(excel_files[0]) 
+    df = load_data(excel_files[0])
 
+    # 2. BUSCADORES
+    registro = st.text_input("Buscar por Número de Registro:")
+    lista_culturas = ["Todas"] + sorted(df['Cultura'].dropna().unique().astype(str).tolist())
+    cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
+
+    # 3. LÓGICA DE FILTRADO
+    df_filtrado = df.copy()
+    if registro:
+        df_filtrado = df_filtrado[df_filtrado['Número de Registro'].astype(str) == registro]
     if cultura_sel != "Todas":
         df_filtrado = df_filtrado[df_filtrado['Cultura'] == cultura_sel]
 
