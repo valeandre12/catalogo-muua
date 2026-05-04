@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import gc
 
 st.set_page_config(
     layout="wide",
@@ -11,9 +12,9 @@ st.title("🏛️ Catálogo MUUA - Colección de Antropología")
 
 
 # ----------------------------
-# CARGA ULTRA OPTIMIZADA
+# CARGA OPTIMIZADA (MEMORIA CONTROLADA)
 # ----------------------------
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_data():
     df = pd.read_csv(
         "LIBRODEREGISTRO.csv",
@@ -25,20 +26,33 @@ def load_data():
             "Materiales",
             "Zona Arqueológica",
             "País"
-        ]
+        ],
+        dtype={
+            "Número de Registro": "string",
+            "Cultura": "string",
+            "Materiales": "string",
+            "Zona Arqueológica": "string",
+            "País": "string",
+            "Denominación del Objeto": "string"
+        }
     )
 
     df.columns = df.columns.str.strip()
 
-    # fecha + año en una sola operación
+    # fecha optimizada (sin duplicar columnas innecesarias)
     df["Fecha de ingreso"] = pd.to_datetime(df["Fecha de ingreso"], errors="coerce")
-    df["Año"] = df["Fecha de ingreso"].dt.year
+    df["Año"] = df["Fecha de ingreso"].dt.year.astype("Int16")
+
+    # 🔥 REDUCCIÓN DE MEMORIA (CLAVE PARA RENDER)
+    df = df.drop(columns=["Fecha de ingreso"])
+
+    gc.collect()
 
     return df
 
 
 # ----------------------------
-# IMAGENES
+# IMÁGENES
 # ----------------------------
 def get_image(denominacion):
     denominacion = str(denominacion).lower()
@@ -53,38 +67,33 @@ def get_image(denominacion):
 
 
 # ----------------------------
-# DATA LOAD
+# DATA
 # ----------------------------
 df = load_data()
 
+# 🔥 LIMITE GLOBAL (CRÍTICO PARA 512MB)
+df = df.head(300)
+
 
 # ----------------------------
-# UI FILTROS
+# FILTROS (sin copy → menos RAM)
 # ----------------------------
 registro = st.text_input("Buscar por Número de Registro:")
 
-lista_culturas = ["Todas"] + sorted(df["Cultura"].dropna().astype(str).unique())
+lista_culturas = ["Todas"] + sorted(df["Cultura"].dropna().unique())
 cultura_sel = st.selectbox("Filtrar por Cultura", lista_culturas)
 
-
-# ----------------------------
-# FILTRADO (sin copy → menos RAM)
-# ----------------------------
 df_filtrado = df
 
 if registro:
-    df_filtrado = df_filtrado[
-        df_filtrado["Número de Registro"].astype(str) == registro
-    ]
+    df_filtrado = df_filtrado[df_filtrado["Número de Registro"] == registro]
 
 if cultura_sel != "Todas":
     df_filtrado = df_filtrado[df_filtrado["Cultura"] == cultura_sel]
 
 
-# ----------------------------
-# LIMITAR RESULTADOS (CLAVE PARA RENDER)
-# ----------------------------
-df_filtrado = df_filtrado.head(200)  # ⚠️ modo demo / performance
+# 🔥 seguridad de memoria en filtros
+df_filtrado = df_filtrado.head(200)
 
 
 # ----------------------------
@@ -103,7 +112,6 @@ evento_seleccion = st.dataframe(
         ]
     ],
     use_container_width=True,
-    on_select="rerun",
     selection_mode="single-row"
 )
 
@@ -140,9 +148,7 @@ if seleccion:
             with c1:
                 st.write(f"**Denominación:** {datos_objeto['Denominación del Objeto']}")
                 st.write(f"**Cultura:** {datos_objeto['Cultura']}")
-                st.write(
-                    f"**Año:** {int(datos_objeto['Año']) if pd.notna(datos_objeto['Año']) else 'N/A'}"
-                )
+                st.write(f"**Año:** {datos_objeto['Año']}")
 
             with c2:
                 st.write(f"**Materiales:** {datos_objeto['Materiales']}")
