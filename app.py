@@ -12,7 +12,7 @@ st.title("🏛️ Catálogo MUUA - Colección de Antropología")
 
 
 # ----------------------------
-# CARGA OPTIMIZADA (MEMORIA CONTROLADA)
+# CARGA OPTIMIZADA (SOLO FIX DE WARNINGS)
 # ----------------------------
 @st.cache_data(ttl=3600)
 def load_data():
@@ -34,16 +34,21 @@ def load_data():
             "Zona Arqueológica": "string",
             "País": "string",
             "Denominación del Objeto": "string"
-        }
+        },
+        low_memory=False  # 🔥 FIX DTYPEWARNING
     )
 
     df.columns = df.columns.str.strip()
 
-    # fecha optimizada (sin duplicar columnas innecesarias)
-    df["Fecha de ingreso"] = pd.to_datetime(df["Fecha de ingreso"], errors="coerce")
+    # 🔥 FIX WARNING dateutil → formato explícito
+    df["Fecha de ingreso"] = pd.to_datetime(
+        df["Fecha de ingreso"],
+        format="%d/%m/%Y",
+        errors="coerce"
+    )
+
     df["Año"] = df["Fecha de ingreso"].dt.year.astype("Int16")
 
-    # 🔥 REDUCCIÓN DE MEMORIA (CLAVE PARA RENDER)
     df = df.drop(columns=["Fecha de ingreso"])
 
     gc.collect()
@@ -70,13 +75,11 @@ def get_image(denominacion):
 # DATA
 # ----------------------------
 df = load_data()
-
-# 🔥 LIMITE GLOBAL (CRÍTICO PARA 512MB)
 df = df.head(300)
 
 
 # ----------------------------
-# FILTROS (sin copy → menos RAM)
+# FILTROS
 # ----------------------------
 registro = st.text_input("Buscar por Número de Registro:")
 
@@ -91,13 +94,11 @@ if registro:
 if cultura_sel != "Todas":
     df_filtrado = df_filtrado[df_filtrado["Cultura"] == cultura_sel]
 
-
-# 🔥 seguridad de memoria en filtros
 df_filtrado = df_filtrado.head(200)
 
 
 # ----------------------------
-# TABLA
+# TABLA (FIX STREAMLIT UI WARNING)
 # ----------------------------
 st.subheader("Información del Objeto")
 
@@ -111,16 +112,26 @@ evento_seleccion = st.dataframe(
             "Materiales"
         ]
     ],
-    use_container_width=True,
+    width="stretch",  # 🔥 FIX use_container_width deprecated
     selection_mode="single-row"
 )
 
 
 # ----------------------------
+# FIX SELECCIÓN COMPATIBLE STREAMLIT
+# ----------------------------
+seleccion = []
+
+if hasattr(evento_seleccion, "selection"):
+    try:
+        seleccion = evento_seleccion.selection["rows"]
+    except:
+        seleccion = []
+
+
+# ----------------------------
 # DETALLE
 # ----------------------------
-seleccion = evento_seleccion.selection.rows
-
 if seleccion:
     datos_objeto = df_filtrado.iloc[seleccion[0]]
 
@@ -132,11 +143,11 @@ if seleccion:
         img_path = get_image(datos_objeto["Denominación del Objeto"])
 
         if os.path.exists(img_path):
-            st.image(img_path, use_container_width=True)
+            st.image(img_path, width="stretch")
         else:
             st.image(
                 "https://via.placeholder.com/300?text=Sin+Imagen",
-                use_container_width=True
+                width="stretch"
             )
 
     with col2:
