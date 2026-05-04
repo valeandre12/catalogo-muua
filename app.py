@@ -112,7 +112,7 @@ evento_seleccion = st.dataframe(
             "Materiales"
         ]
     ],
-    width="stretch",  # 🔥 FIX use_container_width deprecated
+    use_container_width=True,
     selection_mode="single-row"
 )
 
@@ -143,11 +143,11 @@ if seleccion:
         img_path = get_image(datos_objeto["Denominación del Objeto"])
 
         if os.path.exists(img_path):
-            st.image(img_path, width="stretch")
+            st.image(img_path, use_container_width=True)
         else:
             st.image(
                 "https://via.placeholder.com/300?text=Sin+Imagen",
-                width="stretch"
+                use_container_width=True
             )
 
     with col2:
