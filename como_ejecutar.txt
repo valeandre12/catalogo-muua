@@ -1,5 +1,5 @@
 python3 -m venv venv
-linux:source venv/bin/activate
+linux: source venv/bin/activate
 windows: .\venv\Scripts\Activate
 pip install --upgrade pip
 pip install -r requirements.txt
