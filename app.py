@@ -46,6 +46,8 @@ try:
     if cultura_sel != "Todas":
         df_filtrado = df_filtrado[df_filtrado['Cultura'] == cultura_sel]
 
+    df_filtrado = df_filtrado.reset_index(drop=True)
+
     # 4. TABLA PRINCIPAL
     st.subheader("Información del Objeto")
     
@@ -54,6 +56,7 @@ try:
         use_container_width=True,
         on_select="rerun", 
         selection_mode="single-row"
+        key="Tabla_antropologia"
     )
 
     # 5. FICHA TÉCNICA 
