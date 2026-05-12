@@ -50,43 +50,46 @@ try:
 
     # 4. TABLA PRINCIPAL
     st.subheader("Información del Objeto")
-    
-    evento_seleccion = st.dataframe(
-        df_filtrado[["Número de Registro", "Año", "Denominación del Objeto", "Cultura", "Materiales"]],
-        use_container_width=True,
-        on_select="rerun", 
-        selection_mode="single-row"
-        key="Tabla_antropologia"
-    )
 
-    # 5. FICHA TÉCNICA 
-    seleccion = evento_seleccion.selection.rows
-    if seleccion:
-        indice_fila = seleccion[0]
-        datos_objeto = df_filtrado.iloc[indice_fila]
-        
-        st.divider()
-        col1, col2 = st.columns([1, 2])
-        
-        with col1:
-            img_path = get_image(datos_objeto['Denominación del Objeto'])
-            if os.path.exists(img_path):
-                st.image(img_path, caption=datos_objeto['Denominación del Objeto'], use_container_width=True)
-            else:
-                st.image("https://via.placeholder.com/300?text=Sin+Imagen+Referencial", use_container_width=True)
+    if not df_filtrado.empty:
+        evento_seleccion = st.dataframe(
+            df_filtrado[["Número de Registro", "Año", "Denominación del Objeto", "Cultura", "Materiales"]],
+            use_container_width=True,
+            on_select="rerun", 
+            selection_mode="single-row"
+            key="Tabla_antropologia"
+        )
 
-        with col2:
-            st.header(f"Ficha Técnica: {datos_objeto['Número de Registro']}")
-            with st.container(border=True):
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.write(f"**Denominación:** {datos_objeto['Denominación del Objeto']}")
-                    st.write(f"**Cultura:** {datos_objeto['Cultura']}")
-                    st.write(f"**Año de ingreso:** {int(datos_objeto['Año']) if not pd.isna(datos_objeto['Año']) else 'N/A'}")
-                with c2:
-                    st.write(f"**Materiales:** {datos_objeto['Materiales']}")
-                    st.write(f"**Zona:** {datos_objeto['Zona Arqueológica']}")
-                    st.write(f"**País:** {datos_objeto['País']}")
+        # 5. FICHA TÉCNICA 
+        seleccion = evento_seleccion.selection.rows
+        if seleccion:
+            indice_fila = seleccion[0]
+            datos_objeto = df_filtrado.iloc[indice_fila]
+        
+            st.divider()
+            col1, col2 = st.columns([1, 2])
+        
+            with col1:
+                img_path = get_image(datos_objeto['Denominación del Objeto'])
+                if os.path.exists(img_path):
+                    st.image(img_path, caption=datos_objeto['Denominación del Objeto'], use_container_width=True)
+                else:
+                    st.image("https://via.placeholder.com/300?text=Sin+Imagen+Referencial", use_container_width=True)
+
+            with col2:
+                st.header(f"Ficha Técnica: {datos_objeto['Número de Registro']}")
+                with st.container(border=True):
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.write(f"**Denominación:** {datos_objeto['Denominación del Objeto']}")
+                        st.write(f"**Cultura:** {datos_objeto['Cultura']}")
+                        st.write(f"**Año de ingreso:** {int(datos_objeto['Año']) if not pd.isna(datos_objeto['Año']) else 'N/A'}")
+                    with c2:
+                        st.write(f"**Materiales:** {datos_objeto['Materiales']}")
+                        st.write(f"**Zona:** {datos_objeto['Zona Arqueológica']}")
+                        st.write(f"**País:** {datos_objeto['País']}")
+        else:
+            st.info("💡 Haz clic en una fila de la tabla para ver su ficha técnica detallada.")
     else:
         st.warning("No hay objetos que coincidan con los filtros seleccionados")
 
