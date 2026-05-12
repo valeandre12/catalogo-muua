@@ -4,7 +4,7 @@ import os
 
 st.set_page_config(layout="wide", page_title="Catálogo MUUA - Colección de Antropología")
 
-st.title("🏛️ Catálogo MUUA - Colección de Antropología")
+st.title("")
 
 @st.cache_data
 def load_data(path):
